@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- **Rescue scan and one-click repair failed on a fresh install** with `ENOENT … scandir '<DSH_HOME>/sessions'`. Before the first session is saved, the session store folder does not exist yet; the official persistence backend creates it lazily and treats its absence as an empty store. `mover.scan` (and therefore `mover.repairAll`, `mover_list_sessions`, and `mover_repair_sessions`) listed that folder without checking for it. A missing folder now scans as empty, and the plugin does not create it.
+
 ## [2.3.0] - 2026-10-13
 
 ### Added

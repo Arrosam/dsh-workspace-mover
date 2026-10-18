@@ -2000,6 +2000,23 @@ test('mover.repairAll：挂错归位 + 未记账补账自动修复，孤儿跳�
   assert.ok(existsSync(oArtifact));
 });
 
+// 全新安装：官方 jsonl 后端惰性创建会话根目录，缺失时视为空库。扫描与一键修复
+// 不能因此抛 ENOENT，也不能替宿主把目录建出来。
+test('全新安装：会话根目录尚不存在时，scan / repairAll 返回空结果且不创建目录', async () => {
+  const missingRoot = join(root, 'sessions-not-created-yet');
+  ctx.sessionPersistence = { ...ctx.sessionPersistence, root: missingRoot, async list() { return []; } };
+  apply(ctx);
+  const scan = await call('mover.scan');
+  assert.equal(scan.ok, true, JSON.stringify(scan.error));
+  assert.deepEqual(scan.value.items, []);
+  assert.equal(scan.value.scanned, 0);
+  const repair = await call('mover.repairAll');
+  assert.equal(repair.ok, true, JSON.stringify(repair.error));
+  assert.equal(repair.value.fixedCount, 0);
+  assert.equal(repair.value.failedCount, 0);
+  assert.equal(existsSync(missingRoot), false, '不替宿主创建会话根目录');
+});
+
 test('mover.repairAll：一切正常时返回全零结果', async () => {
   apply(ctx);
   sharedIndex.sessionPaths.set('session-aaa', A);
